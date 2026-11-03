@@ -90,3 +90,22 @@ Ways to make it more robust:
 ![Capstone demo](screenshots/02_capstone_demo.png){width=85%}
 
 ![Interactive chat with memory and tools](screenshots/03_chat_memory.png){width=85%}
+
+# 6. Going further: the Campus Copilot web app
+
+The capstone was extended into a full application (`app/`, documented in `docs/ARCHITECTURE.md`):
+
+- **Structured, conversation-aware routing.** A Pydantic `Route` schema (enum + confidence + reason) is passed to Ollama as a JSON-schema constraint, with few-shot examples and the last 4 turns. Follow-up questions ("which course fits *that* interest?") are routed correctly.
+- **MCP tools.** The course catalogue, academic calendar and administrative procedures are served by a separate **Model Context Protocol** server (FastMCP, stdio) and discovered with `langchain-mcp-adapters`.
+- **Least privilege.** Each specialist agent is bound only to the tools of its domain.
+- **Durable memory.** `AsyncSqliteSaver` writes one checkpoint per step, so conversations survive restarts. `trim_messages` bounds the context sent to the model.
+- **Reliability.** `RetryPolicy` (3 attempts, exponential back-off) on LLM nodes; tool errors become ToolMessages; the empty input goes to the fallback without calling the LLM.
+- **Streaming UI.** FastAPI + Server-Sent Events stream the tokens, node updates and tool calls. A run inspector shows the route, the graph path with per-node latency, the tool calls and the state.
+- **Hand-drawn architecture** (rough.js), a docs page and an evaluation page.
+- **Quality.** 11 pytest tests pass. The evaluation on 16 labelled questions gives 100 % routing accuracy, 100 % correct tool selection, 100 % grounded answers and about 1.1 s average latency.
+
+![Agent graph of the web app](diagrams/hand_agent_graph.png){width=95%}
+
+![Web app: memory and context-aware routing](screenshots/ui/05_memory.png){width=95%}
+
+![Web app: evaluation](screenshots/ui/11_evaluation.png){width=80%}

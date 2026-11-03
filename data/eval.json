@@ -1,0 +1,248 @@
+{
+  "summary": {
+    "model": "qwen3:8b",
+    "date": "2026-11-03 13:09",
+    "cases": 16,
+    "routing_accuracy": 1.0,
+    "tool_accuracy": 1.0,
+    "answer_accuracy": 1.0,
+    "avg_seconds": 1.12,
+    "per_category": {
+      "COURSES": "4/4",
+      "PROGRAMMING": "3/3",
+      "MATHEMATICS": "3/3",
+      "ADMINISTRATION": "3/3",
+      "GENERAL": "3/3"
+    }
+  },
+  "rows": [
+    {
+      "question": "Who teaches Deep Learning and in which room?",
+      "expected": "COURSES",
+      "got": "COURSES",
+      "confidence": 1.0,
+      "route_ok": true,
+      "expected_tool": "course_lookup",
+      "tools": [
+        "course_lookup"
+      ],
+      "tool_ok": true,
+      "answer_ok": true,
+      "seconds": 1.04,
+      "answer": "Dr. Amrani teaches Deep Learning in room GPU-1."
+    },
+    {
+      "question": "What are the prerequisites of Generative AI and LLM Agents?",
+      "expected": "COURSES",
+      "got": "COURSES",
+      "confidence": 1.0,
+      "route_ok": true,
+      "expected_tool": "course_lookup",
+      "tools": [
+        "course_lookup"
+      ],
+      "tool_ok": true,
+      "answer_ok": true,
+      "seconds": 1.16,
+      "answer": "The prerequisites for the course **Generative AI and LLM Agents (AI503)** are **AI502**."
+    },
+    {
+      "question": "How is the Computer Vision course assessed?",
+      "expected": "COURSES",
+      "got": "COURSES",
+      "confidence": 1.0,
+      "route_ok": true,
+      "expected_tool": "course_lookup",
+      "tools": [
+        "course_lookup"
+      ],
+      "tool_ok": true,
+      "answer_ok": true,
+      "seconds": 1.18,
+      "answer": "The **Computer Vision** course (CV530) is assessed through a **project** contributing **60%** and an **exam** contributing **40%**."
+    },
+    {
+      "question": "When do the semester 1 final exams start?",
+      "expected": "COURSES",
+      "got": "COURSES",
+      "confidence": 1.0,
+      "route_ok": true,
+      "expected_tool": "academic_calendar",
+      "tools": [
+        "academic_calendar"
+      ],
+      "tool_ok": true,
+      "answer_ok": true,
+      "seconds": 1.08,
+      "answer": "The semester 1 final exams start on **2027-01-11**."
+    },
+    {
+      "question": "Write a Python function that returns the n-th Fibonacci number.",
+      "expected": "PROGRAMMING",
+      "got": "PROGRAMMING",
+      "confidence": 0.99,
+      "route_ok": true,
+      "expected_tool": null,
+      "tools": [],
+      "tool_ok": true,
+      "answer_ok": true,
+      "seconds": 1.02,
+      "answer": "```python\ndef fibonacci(n):\n    if n <= 0:\n        raise ValueError(\"n must be a positive integer\")\n    elif n == 1 or n == 2:\n        return 1\n    else:\n        a, b = 1, 1\n        for _ in range(3, n + 1):\n            a, b = b, a + b\n        return b\n```"
+    },
+    {
+      "question": "What is the difference between a list and a tuple in Python?",
+      "expected": "PROGRAMMING",
+      "got": "PROGRAMMING",
+      "confidence": 0.99,
+      "route_ok": true,
+      "expected_tool": null,
+      "tools": [],
+      "tool_ok": true,
+      "answer_ok": true,
+      "seconds": 1.48,
+      "answer": "Lists and tuples in Python are both used to store collections of items, but they have key differences:\n\n- **Mutability**:  \n  Lists are **mutable** (can be changed after creation), while tuples are **immutable** (cannot be changed after creation).\n\n- **Syntax**:  \n  Lists use square brackets `[]`, and tuples use parentheses `()`.\n\n- **Performance**:  \n  Tuples are generally faster to process than "
+    },
+    {
+      "question": "Why do I get 'IndexError: list index out of range'?",
+      "expected": "PROGRAMMING",
+      "got": "PROGRAMMING",
+      "confidence": 0.99,
+      "route_ok": true,
+      "expected_tool": null,
+      "tools": [],
+      "tool_ok": true,
+      "answer_ok": null,
+      "seconds": 2.05,
+      "answer": "The error `'IndexError: list index out of range'` occurs when you try to access an element in a list using an index that is **out of bounds** \u2014 that is, the index is either **negative** or **greater than or equal to the length** of the list.\n\n### Example:\n```python\nmy_list = [1, 2, 3]\nprint(my_list[3])  # IndexError: list index out of range\n```\n\n### Common Causes:\n1. **Incorrect index**: You're us"
+    },
+    {
+      "question": "What is 125 * 38 + 17?",
+      "expected": "MATHEMATICS",
+      "got": "MATHEMATICS",
+      "confidence": 1.0,
+      "route_ok": true,
+      "expected_tool": "calculator",
+      "tools": [
+        "calculator"
+      ],
+      "tool_ok": true,
+      "answer_ok": true,
+      "seconds": 0.89,
+      "answer": "The result of $125 \\times 38 + 17$ is 4767."
+    },
+    {
+      "question": "Compute (15 + 27) * 3 - 2 ** 5.",
+      "expected": "MATHEMATICS",
+      "got": "MATHEMATICS",
+      "confidence": 1.0,
+      "route_ok": true,
+      "expected_tool": "calculator",
+      "tools": [
+        "calculator"
+      ],
+      "tool_ok": true,
+      "answer_ok": true,
+      "seconds": 0.8,
+      "answer": "The result of the computation is 94."
+    },
+    {
+      "question": "What is the derivative of x^3 + 2x?",
+      "expected": "MATHEMATICS",
+      "got": "MATHEMATICS",
+      "confidence": 1.0,
+      "route_ok": true,
+      "expected_tool": null,
+      "tools": [],
+      "tool_ok": true,
+      "answer_ok": true,
+      "seconds": 0.83,
+      "answer": "The derivative of $ x^3 + 2x $ with respect to $ x $ is $ 3x^2 + 2 $."
+    },
+    {
+      "question": "How do I request an enrollment certificate?",
+      "expected": "ADMINISTRATION",
+      "got": "ADMINISTRATION",
+      "confidence": 1.0,
+      "route_ok": true,
+      "expected_tool": "admin_procedure",
+      "tools": [
+        "admin_procedure"
+      ],
+      "tool_ok": true,
+      "answer_ok": true,
+      "seconds": 1.23,
+      "answer": "To request an enrollment certificate, you can do so online through the student portal by navigating to **Documents > Enrollment certificate**. The certificate will be delivered as a signed PDF within 48 hours and is free of charge."
+    },
+    {
+      "question": "How can I get an official transcript?",
+      "expected": "ADMINISTRATION",
+      "got": "ADMINISTRATION",
+      "confidence": 1.0,
+      "route_ok": true,
+      "expected_tool": "admin_procedure",
+      "tools": [
+        "admin_procedure"
+      ],
+      "tool_ok": true,
+      "answer_ok": true,
+      "seconds": 1.25,
+      "answer": "To obtain an official transcript, you need to visit the Registrar's office located in Building A, ground floor, and present your student card. The transcript will be ready in 5 working days. The first copy is free, and additional copies cost 20 MAD each."
+    },
+    {
+      "question": "What is the deadline to pay the tuition fees?",
+      "expected": "ADMINISTRATION",
+      "got": "ADMINISTRATION",
+      "confidence": 1.0,
+      "route_ok": true,
+      "expected_tool": "academic_calendar",
+      "tools": [
+        "academic_calendar"
+      ],
+      "tool_ok": true,
+      "answer_ok": true,
+      "seconds": 1.06,
+      "answer": "The deadline to pay the tuition fees (2nd installment) is November 30, 2026."
+    },
+    {
+      "question": "What is today's date?",
+      "expected": "GENERAL",
+      "got": "GENERAL",
+      "confidence": 1.0,
+      "route_ok": true,
+      "expected_tool": "current_datetime",
+      "tools": [
+        "current_datetime"
+      ],
+      "tool_ok": true,
+      "answer_ok": null,
+      "seconds": 0.86,
+      "answer": "Today's date is Tuesday, 03 November 2026."
+    },
+    {
+      "question": "Explain overfitting in one paragraph.",
+      "expected": "GENERAL",
+      "got": "GENERAL",
+      "confidence": 0.95,
+      "route_ok": true,
+      "expected_tool": null,
+      "tools": [],
+      "tool_ok": true,
+      "answer_ok": null,
+      "seconds": 1.19,
+      "answer": "Overfitting occurs when a machine learning model learns the training data too well, capturing noise and outliers instead of the underlying patterns. This results in a model that performs exceptionally well on the training data but poorly on new, unseen data. Overfitting typically happens when the model is too complex relative to the amount and variability of the training data, leading to poor gene"
+    },
+    {
+      "question": "Hello! Who are you?",
+      "expected": "GENERAL",
+      "got": "GENERAL",
+      "confidence": 1.0,
+      "route_ok": true,
+      "expected_tool": null,
+      "tools": [],
+      "tool_ok": true,
+      "answer_ok": null,
+      "seconds": 0.87,
+      "answer": "Hi! I'm Campus Copilot, your friendly assistant at the university. I can help you with course information, answer questions about the university, or assist with any other needs you might have. How can I help you today?"
+    }
+  ]
+}

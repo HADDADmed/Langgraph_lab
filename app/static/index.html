@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Campus Copilot — LangGraph multi-agent assistant</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/vendor/rough.js"></script>
+<script src="/static/vendor/marked.umd.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="2.2"/><circle cx="19" cy="5" r="2.2"/><circle cx="19" cy="19" r="2.2"/><path d="M7 11l10-5M7 13l10 5"/></svg></div>
+      <div><b>Campus Copilot</b><small>LangGraph · local LLM</small></div>
+    </div>
+    <button class="nav on" data-view="chat"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/></svg>Assistant</button>
+    <button class="nav" data-view="arch"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><path d="M10 6.5h4.5a2 2 0 0 1 2 2V14"/></svg>Architecture</button>
+    <button class="nav" data-view="docs"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg>Docs</button>
+    <button class="nav" data-view="eval"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Evaluation</button>
+    <div class="grow"></div>
+    <div class="status">
+      <div><span class="dot" id="st-model"></span><span id="st-model-t">model…</span></div>
+      <div><span class="dot" id="st-mcp"></span><span id="st-mcp-t">MCP server…</span></div>
+      <div><span class="dot on"></span>SQLite memory</div>
+    </div>
+  </aside>
+
+  <main>
+    <!-- ======================= CHAT ======================= -->
+    <section class="view on" id="v-chat">
+      <div class="chat">
+        <div class="convo">
+          <div class="convo-head">
+            <div><h3>University assistant</h3><div class="muted" style="font-size:12.5px">Thread <span class="mono" id="tid"></span> · memory persists across restarts</div></div>
+            <div style="display:flex;gap:8px"><button class="btn" id="new-thread">New thread</button></div>
+          </div>
+          <div class="msgs"><div class="msgs-in" id="msgs"></div></div>
+          <div class="composer">
+            <form id="f"><input id="q" autocomplete="off" placeholder="Ask about courses, code, maths, administration…"><button type="submit">Send</button></form>
+          </div>
+        </div>
+        <aside class="insp">
+          <h4>Routing decision</h4>
+          <div class="card route" id="route"><div class="placeholder">Send a message to see how the classifier routes it.</div></div>
+          <h4>Graph path</h4>
+          <ul class="timeline" id="path"><li class="placeholder" style="padding-left:0">—</li></ul>
+          <h4>Tool calls</h4>
+          <div id="tools"><div class="placeholder">No tool used yet.</div></div>
+          <h4>State &amp; memory</h4>
+          <div class="kv" id="mem"><span>messages</span><span>0</span><span>checkpoints</span><span>0</span></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ======================= ARCHITECTURE ======================= -->
+    <section class="view" id="v-arch"><div class="page">
+      <div class="eyebrow">Architecture</div>
+      <h1>How a question flows through the system</h1>
+      <p class="lead">Campus Copilot is a <b>multi-agent LangGraph workflow</b>. A classifier routes each message to one of five specialist agents. Each specialist can call only the tools of its own domain (some local, some served over MCP) before it writes the answer. Every step is checkpointed in SQLite and streamed to this page.</p>
+
+      <h2>1 · System architecture</h2>
+      <p class="muted">Everything runs on one machine. The browser talks to FastAPI, which runs the LangGraph graph. The graph talks to the local LLM, to the tools and to the checkpointer.</p>
+      <div class="card diagram"><svg id="d-system" viewBox="0 0 1100 470"></svg></div>
+
+      <h2>2 · The agent graph (LangGraph StateGraph)</h2>
+      <p class="muted">Nodes are Python functions and edges are transitions. Dashed arrows are <b>conditional edges</b>, decided at run time from the shared state.</p>
+      <div class="card diagram"><svg id="d-graph" viewBox="0 0 1100 520"></svg></div>
+
+      <h2>3 · Life of one request</h2>
+      <p class="muted">Example: <i>“What is 125 × 38 + 17?”</i>, from the click on <b>Send</b> to the streamed answer.</p>
+      <div class="card diagram"><svg id="d-seq" viewBox="0 0 1100 600"></svg></div>
+
+      <h2>Workflow, step by step</h2>
+      <div class="steps">
+        <div class="card step"><div class="k">1 · Receive</div><p><code>POST /api/chat</code> with the message and a <code>thread_id</code>. FastAPI opens a Server-Sent-Events stream and calls <code>graph.astream(..., stream_mode=["messages","updates"])</code>.</p></div>
+        <div class="card step"><div class="k">2 · Restore memory</div><p>The <b>AsyncSqliteSaver</b> loads the last checkpoint of the thread. The new message is <i>appended</i> to <code>state.messages</code> by the <code>add_messages</code> reducer.</p></div>
+        <div class="card step"><div class="k">3 · Classify</div><p>The classifier calls the LLM with a <b>JSON schema</b> (Pydantic <code>Route</code>: enum category + confidence + reason), few-shot examples and the last turns, so that follow-up questions are routed correctly. An empty input goes to <code>fallback</code> without calling the LLM.</p></div>
+        <div class="card step"><div class="k">4 · Specialise</div><p>A conditional edge selects one of the five agents. Each one has its own system prompt and is bound <b>only to its domain's tools</b> (least privilege). <code>trim_messages</code> keeps the context window small.</p></div>
+        <div class="card step"><div class="k">5 · Act</div><p>If the model emits <code>tool_calls</code>, the shared <b>ToolNode</b> runs them: local Python tools, or MCP tools through the campus MCP server. Errors become <code>ToolMessage</code>s instead of crashes.</p></div>
+        <div class="card step"><div class="k">6 · Loop back</div><p><code>route_after_tools</code> reads <code>state.category</code> and goes back to the <b>same</b> agent, which reads the tool result and either calls another tool or writes the final answer.</p></div>
+        <div class="card step"><div class="k">7 · Stream</div><p>Tokens, node updates, routing and tool events are pushed to the browser as they happen. Here you see the answer being written and the trace filling up in the inspector.</p></div>
+        <div class="card step"><div class="k">8 · Persist &amp; recover</div><p>A checkpoint is written after every super-step (time-travel history). LLM nodes have a <b>RetryPolicy</b> (3 attempts, exponential back-off), and the server turns a final failure into a friendly message.</p></div>
+      </div>
+    </div></section>
+
+    <!-- ======================= DOCS ======================= -->
+    <section class="view" id="v-docs"><div class="page">
+      <div class="eyebrow">Documentation</div>
+      <h1>Stack, tools and API</h1>
+      <p class="lead">What each technology does in this project, why it was chosen, and where to find it in the code.</p>
+
+      <h2>Technologies</h2>
+      <div class="grid" id="techs"></div>
+
+      <h2>Agent tools</h2>
+      <p class="muted">Live list from <code>/api/info</code>. <b>local</b> = a Python function in the agent process; <b>mcp</b> = discovered at start-up from the campus MCP server (stdio).</p>
+      <table class="t" id="tool-table"><thead><tr><th>Tool</th><th>Source</th><th>Used by</th><th>What it does</th></tr></thead><tbody></tbody></table>
+
+      <h2>HTTP API</h2>
+      <table class="t"><thead><tr><th>Endpoint</th><th>Description</th></tr></thead><tbody>
+        <tr><td class="mono">POST /api/chat</td><td>Body <code>{message, thread_id}</code>. Returns a stream of SSE events: <code>route</code>, <code>node</code>, <code>tool_call</code>, <code>tool_result</code>, <code>token</code>, <code>error</code>, <code>done</code>.</td></tr>
+        <tr><td class="mono">GET /api/threads/{id}</td><td>Messages of a thread from the checkpointer, plus the number of stored checkpoints (time-travel history).</td></tr>
+        <tr><td class="mono">DELETE /api/threads/{id}</td><td>Deletes all checkpoints of a thread.</td></tr>
+        <tr><td class="mono">GET /api/info</td><td>Model, MCP status, nodes and tools (with the agents allowed to use them).</td></tr>
+        <tr><td class="mono">GET /api/eval · POST /api/eval/run</td><td>Last evaluation report / run the evaluation suite again.</td></tr>
+      </tbody></table>
+
+      <h2>Run it locally</h2>
+<pre class="block">ollama pull qwen3:8b
+python3.11 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.server:app --port 8000          # open http://127.0.0.1:8000
+python -m app.evaluate                      # evaluation report → data/eval.json
+pytest -q                                   # unit + API tests</pre>
+    </div></section>
+
+    <!-- ======================= EVAL ======================= -->
+    <section class="view" id="v-eval"><div class="page">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px">
+        <div><div class="eyebrow">Evaluation</div><h1>Does the agent behave as designed?</h1>
+        <p class="lead">16 labelled questions across the five categories. For each one we check the <b>route</b>, whether the <b>expected tool</b> was called, and whether the answer contains the <b>expected fact</b> from the tool.</p></div>
+        <button class="btn primary" id="run-eval">Re-run evaluation</button>
+      </div>
+      <div class="tiles" id="tiles"></div>
+      <table class="t" id="eval-table"><thead><tr><th>Question</th><th>Expected</th><th>Routed to</th><th>Tools</th><th>Answer</th><th>Time</th></tr></thead><tbody></tbody></table>
+      <p class="muted" id="eval-meta" style="margin-top:10px"></p>
+    </div></section>
+  </main>
+</div>
+<script src="/static/diagrams.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
